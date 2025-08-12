@@ -7,5 +7,6 @@ package com.github.mbmll.datax.core.exceptions;
  * @Date 2025/8/13 00:10:02
  */
 
-public class ClosedException extends Exception {
+public class ClosedException extends DataXException {
 }
+
