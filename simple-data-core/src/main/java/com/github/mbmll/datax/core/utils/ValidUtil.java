@@ -3,6 +3,9 @@ package com.github.mbmll.datax.core.utils;
 
 import com.github.mbmll.datax.core.properties.JobProperties;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+
 import static com.github.mbmll.datax.core.constants.RuntimeModel.STANDALONE;
 
 /**

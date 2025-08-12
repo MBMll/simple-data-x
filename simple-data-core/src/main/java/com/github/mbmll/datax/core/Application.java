@@ -3,8 +3,8 @@ package com.github.mbmll.datax.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mbmll.datax.core.properties.JobProperties;
 import com.github.mbmll.datax.core.utils.ValidUtil;
-import com.sun.org.slf4j.internal.Logger;
-import com.sun.org.slf4j.internal.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @Author xlc
@@ -27,7 +27,6 @@ public class Application {
 
     private static void run(JobProperties jobProperties) {
         ValidUtil.validRuntimeMode(jobProperties);
-
     }
 
 }
