@@ -28,10 +28,21 @@ public class RowChannel<E> implements AutoCloseable {
     /**
      *
      */
+    public RowChannel() {
+        this(100_000, 1);
+    }
+
+    /**
+     * @param offers offer thread count
+     */
     public RowChannel(int offers) {
         this(100_000, offers);
     }
 
+    /**
+     * @param capacity capacity
+     * @param offers   offer thread count
+     */
     public RowChannel(int capacity, int offers) {
         queue = new LinkedBlockingQueue<>(capacity);
         runnings = new AtomicInteger(offers);
@@ -48,7 +59,9 @@ public class RowChannel<E> implements AutoCloseable {
 
     /**
      * offer and check thread status
-     * @param e  element
+     *
+     * @param e element
+     *
      * @throws ClosedException if offer thread is closed
      */
     public void offer(E e) throws ClosedException {
@@ -57,7 +70,7 @@ public class RowChannel<E> implements AutoCloseable {
                 queue.offer(e, retryTime, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
-        } while (runnings.get() > 0);
+        } while (isRunning());
         throw new ClosedException();
     }
 
@@ -73,7 +86,7 @@ public class RowChannel<E> implements AutoCloseable {
                 return queue.poll(retryTime, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
-        } while (runnings.get() > 0);
+        } while (isRunning());
         throw new ClosedException();
     }
 }
