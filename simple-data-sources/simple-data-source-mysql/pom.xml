@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.github.mbmll.commons</groupId>
-        <artifactId>readers</artifactId>
+        <artifactId>simple-data-sources</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>mysql-reader</artifactId>
+    <artifactId>simple-data-source-mysql</artifactId>
     <packaging>jar</packaging>
 
     <properties>

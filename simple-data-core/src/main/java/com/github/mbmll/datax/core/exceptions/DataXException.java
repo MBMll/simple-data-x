@@ -8,4 +8,8 @@ public class DataXException extends Exception {
     public DataXException(String message) {
         super(message);
     }
+
+    public DataXException(String message, Exception e) {
+        super(message, e);
+    }
 }

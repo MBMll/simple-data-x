@@ -1,4 +1,4 @@
-package com.github.mbmll.datax.reader.mysql;
+package com.github.mbmll.datax.sources.mysql;
 
 import com.github.mbmll.datax.core.RowChannel;
 import com.github.mbmll.datax.core.concepts.Reader;
@@ -23,39 +23,6 @@ import java.sql.*;
 public class MysqlReader implements Reader<Record> {
     private MysqlReaderConfig config;
 
-    private Connection getConnection() throws ClassNotFoundException, SQLException {
-        Class.forName("com.mysql.jdbc.Driver");
-        DriverManager.setLoginTimeout(15);
-        return DriverManager.getConnection(config.getUrl(), config.getUsername(), config.getPassword());
-    }
-
-    /**
-     * @param queue
-     *
-     * @throws Exception
-     */
-    @Override
-    public void read(RowChannel<Record> queue) throws Exception {
-        try (Connection conn = getConnection()) {
-            // make sure autocommit is off
-            conn.setAutoCommit(false);
-            Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
-                    ResultSet.CONCUR_READ_ONLY);
-            stmt.setFetchSize(config.getFetchSize());
-            stmt.setQueryTimeout(config.getQueryTimeout());
-            ResultSet rs = stmt.executeQuery(config.getQuerySql());
-            ResultSetMetaData metaData = rs.getMetaData();
-            int columnNumber = metaData.getColumnCount();
-            while (rs.next()) {
-                Record record = new Record(columnNumber);
-                for (int i = 0; i < columnNumber; i++) {
-                    record.addColumn(getColumn(metaData, i, rs));
-                }
-                queue.offer(record);
-            }
-        }
-    }
-
     /**
      * @param metaData
      * @param i
@@ -67,7 +34,8 @@ public class MysqlReader implements Reader<Record> {
      * @throws UnsupportedEncodingException
      * @throws UnsupportedTypeException
      */
-    private Column getColumn(ResultSetMetaData metaData, int i, ResultSet rs) throws SQLException, UnsupportedEncodingException, UnsupportedTypeException {
+    private Column getColumn(ResultSetMetaData metaData, int i, ResultSet rs)
+            throws SQLException, UnsupportedEncodingException, UnsupportedTypeException {
         switch (metaData.getColumnType(i)) {
             case Types.CHAR:
             case Types.NCHAR:
@@ -131,6 +99,33 @@ public class MysqlReader implements Reader<Record> {
                                 metaData.getColumnName(i),
                                 metaData.getColumnType(i),
                                 metaData.getColumnClassName(i)));
+        }
+    }
+
+    /**
+     * @param queue
+     *
+     * @throws Exception
+     */
+    @Override
+    public void read(RowChannel<Record> queue) throws Exception {
+        try (Connection conn = DBUtils.getConnection(config)) {
+            // make sure autocommit is off
+            conn.setAutoCommit(false);
+            Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            stmt.setFetchSize(config.getFetchSize());
+            stmt.setQueryTimeout(config.getQueryTimeout());
+            ResultSet rs = stmt.executeQuery(config.getQuerySql());
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnNumber = metaData.getColumnCount();
+            while (rs.next()) {
+                Record record = new Record(columnNumber);
+                for (int i = 0; i < columnNumber; i++) {
+                    record.addColumn(getColumn(metaData, i, rs));
+                }
+                queue.offer(record);
+            }
         }
     }
 }

@@ -45,17 +45,16 @@ public class Engine<E> {
         // 执行 transformer, 输入为channel，输出为queues
         tasks.add(ConcurrentUtil.runAsync(() -> {
             try {
+                E e;
                 do {
-                    E e = channel.poll();
+                    e = channel.poll();
                     for (Transformer<E> transformer : transformers) {
                         e = transformer.transform(e);
                     }
                     for (RowChannel<E> q : queues) {
                         q.offer(e);
                     }
-                } while (true);
-            } catch (ClosedException ignored) {
-                //这里最后都会抛出异常,所以直接忽略
+                } while (e != null);
             } finally {
                 for (RowChannel<E> queue : queues) {
                     queue.close();

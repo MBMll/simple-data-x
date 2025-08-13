@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>simple-data-core</module>
-        <module>readers</module>
+        <module>simple-data-sources</module>
     </modules>
 
     <properties>

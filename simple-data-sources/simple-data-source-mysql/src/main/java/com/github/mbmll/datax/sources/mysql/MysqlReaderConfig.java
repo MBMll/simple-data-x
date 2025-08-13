@@ -1,12 +1,9 @@
-package com.github.mbmll.datax.reader.mysql;
+package com.github.mbmll.datax.sources.mysql;
 
 /**
  *
  */
-public class MysqlReaderConfig {
-    private String url;
-    private String username;
-    private String password;
+public class MysqlReaderConfig extends ConnectionProperties{
     private String database;
     private String table;
     private String whereCondition;
@@ -31,13 +28,7 @@ public class MysqlReaderConfig {
         this.fetchSize = fetchSize;
     }
 
-    public String getPassword() {
-        return password;
-    }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
 
     public String getQuerySql() {
         return querySql;
@@ -63,21 +54,6 @@ public class MysqlReaderConfig {
         this.table = table;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
 
     public String getWhereCondition() {
         return whereCondition;

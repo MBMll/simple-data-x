@@ -9,10 +9,11 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>readers</artifactId>
+    <artifactId>simple-data-sources</artifactId>
     <packaging>pom</packaging>
+
     <modules>
-        <module>mysql-reader</module>
+        <module>simple-data-source-mysql</module>
     </modules>
 
 

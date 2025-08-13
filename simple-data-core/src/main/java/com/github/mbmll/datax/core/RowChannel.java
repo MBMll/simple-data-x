@@ -80,13 +80,13 @@ public class RowChannel<E> implements AutoCloseable {
      *
      * @throws ClosedException
      */
-    public E poll() throws ClosedException {
+    public E poll() {
         do {
             try {
                 return queue.poll(retryTime, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
         } while (isRunning());
-        throw new ClosedException();
+        return null;
     }
 }
