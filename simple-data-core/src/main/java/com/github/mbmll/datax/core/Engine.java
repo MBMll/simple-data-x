@@ -1,6 +1,9 @@
 package com.github.mbmll.datax.core;
 
 
+import com.github.mbmll.datax.core.concepts.Reader;
+import com.github.mbmll.datax.core.concepts.Transformer;
+import com.github.mbmll.datax.core.concepts.Writer;
 import com.github.mbmll.datax.core.utils.ConcurrentUtil;
 
 import java.util.ArrayList;
@@ -42,34 +45,32 @@ public class Engine<E> {
     public void run(List<Reader<E>> readers,
                     List<Transformer<E>> transformers,
                     List<Writer<E>> writers) {
+        RowChannel<E> channel = new RowChannel<E>(100_000);
         BlockingQueue<E> queue = new ArrayBlockingQueue<>(100_000);
         for (Reader<E> reader : readers) {
             tasks.add(ConcurrentUtil.runAsync(() -> {
-                reader.read((E e) -> {
-                    offer(e, queue);
-                });
+                reader.read(channel);
                 return null;
             }));
         }
-        List<BlockingQueue<E>> queues = new ArrayList<>(writers.size());
+        List<RowChannel<E>> queues = new ArrayList<>(writers.size());
         tasks.add(ConcurrentUtil.runAsync(() -> {
-            while (isRunning.get()) {
+            while (channel.isRunning()) {
                 E e = poll(queue);
                 for (Transformer<E> transformer : transformers) {
                     e = transformer.transform(e);
                 }
-                for (BlockingQueue<E> q : queues) {
-                    offer(e, q);
+                for (RowChannel<E> q : queues) {
+                    q.offer(e);
                 }
             }
             return null;
         }));
         for (int i = 0; i < writers.size(); i++) {
             Writer<E> writer = writers.get(i);
-            BlockingQueue<E> q = queues.get(i);
+            RowChannel<E> q = queues.get(i);
             tasks.add(ConcurrentUtil.runAsync(() -> {
-                E e = poll(q);
-                writer.write(e);
+                writer.write(q);
                 return null;
             }));
         }

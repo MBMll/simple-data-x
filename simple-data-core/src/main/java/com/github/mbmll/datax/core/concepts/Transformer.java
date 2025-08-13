@@ -10,5 +10,5 @@ public interface Transformer<E> {
      *
      * @return
      */
-    boolean transform(E e);
+    E transform(E e);
 }

@@ -6,7 +6,7 @@ import com.github.mbmll.datax.core.exceptions.ClosedException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @param <E> element type
@@ -15,33 +15,49 @@ public class RowChannel<E> implements AutoCloseable {
     /**
      *
      */
-    private final BlockingQueue<E> queue = new LinkedBlockingQueue<E>(100_000);
+    private final BlockingQueue<E> queue;
     /**
      *
      */
-    private AtomicBoolean isRunning = new AtomicBoolean(true);
+    private final AtomicInteger runnings;
     /**
      * unit second
      */
-    private int retryTime = 1;
+    private final int retryTime = 1;
+
+    /**
+     *
+     */
+    public RowChannel(int offers) {
+        this(100_000, offers);
+    }
+
+    public RowChannel(int capacity, int offers) {
+        queue = new LinkedBlockingQueue<>(capacity);
+        runnings = new AtomicInteger(offers);
+    }
 
     @Override
     public void close() throws Exception {
-        isRunning.set(false);
+        runnings.decrementAndGet();
+    }
+
+    public boolean isRunning() {
+        return runnings.get() > 0;
     }
 
     /**
-     * @param e
-     *
-     * @return
+     * offer and check thread status
+     * @param e  element
+     * @throws ClosedException if offer thread is closed
      */
-    public boolean offer(E e) throws ClosedException {
+    public void offer(E e) throws ClosedException {
         do {
             try {
-                return queue.offer(e, retryTime, TimeUnit.SECONDS);
+                queue.offer(e, retryTime, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
-        } while (isRunning.get());
+        } while (runnings.get() > 0);
         throw new ClosedException();
     }
 
@@ -57,7 +73,7 @@ public class RowChannel<E> implements AutoCloseable {
                 return queue.poll(retryTime, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
-        } while (isRunning.get());
+        } while (runnings.get() > 0);
         throw new ClosedException();
     }
 }

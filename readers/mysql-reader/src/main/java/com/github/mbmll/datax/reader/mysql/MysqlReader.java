@@ -35,7 +35,7 @@ public class MysqlReader implements Reader<Record> {
      * @throws Exception
      */
     @Override
-    public void read(RowChannel queue) throws Exception {
+    public void read(RowChannel<Record> queue) throws Exception {
         try (Connection conn = getConnection()) {
             // make sure autocommit is off
             conn.setAutoCommit(false);
