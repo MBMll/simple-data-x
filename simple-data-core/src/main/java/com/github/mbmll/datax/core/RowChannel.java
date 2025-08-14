@@ -3,6 +3,8 @@ package com.github.mbmll.datax.core;
 
 import com.github.mbmll.datax.core.exceptions.ClosedException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +80,6 @@ public class RowChannel<E> implements AutoCloseable {
      *
      * @return element
      *
-     * @throws ClosedException
      */
     public E poll() {
         do {
@@ -88,5 +89,23 @@ public class RowChannel<E> implements AutoCloseable {
             }
         } while (isRunning());
         return null;
+    }
+
+    /**
+     * batch poll
+     *
+     * @param size batch size
+     *
+     * @return batch elements list
+     */
+    public List<E> poll(int size) {
+        List<E> list = new ArrayList<>(size);
+        do {
+            try {
+                list.add(queue.poll(retryTime, TimeUnit.SECONDS));
+            } catch (InterruptedException ignored) {
+            }
+        } while (isRunning());
+        return list;
     }
 }

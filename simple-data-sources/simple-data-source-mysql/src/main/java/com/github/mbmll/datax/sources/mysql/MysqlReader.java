@@ -2,7 +2,7 @@ package com.github.mbmll.datax.sources.mysql;
 
 import com.github.mbmll.datax.core.RowChannel;
 import com.github.mbmll.datax.core.concepts.Reader;
-import com.github.mbmll.datax.core.constants.Type;
+import com.github.mbmll.datax.core.constants.JavaType;
 import com.github.mbmll.datax.core.entity.Column;
 import com.github.mbmll.datax.core.entity.Record;
 import com.github.mbmll.datax.core.exceptions.UnsupportedTypeException;
@@ -50,47 +50,47 @@ public class MysqlReader implements Reader<Record> {
                     rawData = new String((rs.getBytes(i) == null ? ArrayUtils.EMPTY_BYTE_ARRAY :
                             rs.getBytes(i)), config.getMandatoryEncoding());
                 }
-                return new Column(Type.STRING, rawData, rawData.getBytes().length);
+                return new Column(JavaType.STRING, rawData, rawData.getBytes().length);
             case Types.CLOB:
             case Types.NCLOB:
                 String s = rs.getString(i);
-                return new Column(Type.STRING, s, s.getBytes().length);
+                return new Column(JavaType.STRING, s, s.getBytes().length);
             case Types.SMALLINT:
             case Types.TINYINT:
             case Types.INTEGER:
             case Types.BIGINT:
-                return new Column(Type.LONG, new BigInteger(rs.getString(i)), 0);
+                return new Column(JavaType.LONG, new BigInteger(rs.getString(i)), 0);
             case Types.NUMERIC:
             case Types.DECIMAL:
-                return new Column(Type.DECIMAL, new BigDecimal(rs.getString(i)), 0);
+                return new Column(JavaType.DECIMAL, new BigDecimal(rs.getString(i)), 0);
             case Types.FLOAT:
             case Types.REAL:
             case Types.DOUBLE:
-                return new Column(Type.DOUBLE, rs.getString(i), 0);
+                return new Column(JavaType.DOUBLE, rs.getString(i), 0);
             case Types.TIME:
-                return new Column(Type.DATE, new Date(rs.getTime(i).getTime()), 0);
+                return new Column(JavaType.DATE, new Date(rs.getTime(i).getTime()), 0);
             // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
             case Types.DATE:
-                return new Column(Type.DATE, rs.getDate(i), 0);
+                return new Column(JavaType.DATE, rs.getDate(i), 0);
             case Types.TIMESTAMP:
-                return new Column(Type.DATE, new Date(rs.getTimestamp(i).getTime()), 0);
+                return new Column(JavaType.DATE, new Date(rs.getTimestamp(i).getTime()), 0);
             case Types.BINARY:
             case Types.VARBINARY:
             case Types.BLOB:
             case Types.LONGVARBINARY:
                 byte[] bytes = rs.getBytes(i);
-                return new Column(Type.BYTES, bytes, bytes.length);
+                return new Column(JavaType.BYTES, bytes, bytes.length);
             // warn: bit(1) -> Types.BIT 可使用BoolColumn
             // warn: bit(>1) -> Types.VARBINARY 可使用BytesColumn
             case Types.BOOLEAN:
             case Types.BIT:
-                return new Column(Type.BOOL, rs.getBoolean(i), 0);
+                return new Column(JavaType.BOOL, rs.getBoolean(i), 0);
             case Types.NULL:
                 String stringData = null;
                 if (rs.getObject(i) != null) {
                     stringData = rs.getObject(i).toString();
                 }
-                return new Column(Type.NULL, stringData, 0);
+                return new Column(JavaType.NULL, stringData, 0);
             default:
                 throw new UnsupportedTypeException(
                         String.format(
@@ -127,5 +127,13 @@ public class MysqlReader implements Reader<Record> {
                 queue.offer(record);
             }
         }
+    }
+
+    public MysqlReaderConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(MysqlReaderConfig config) {
+        this.config = config;
     }
 }

@@ -1,28 +1,28 @@
 package com.github.mbmll.datax.core.entity;
 
 
-import com.github.mbmll.datax.core.constants.Type;
+import com.github.mbmll.datax.core.constants.JavaType;
 
 public class Column {
 
-    private Type type;
+    private JavaType javaType;
 
     private Object rawData;
 
     private int byteSize;
 
-    public Column(Type type, Object rawData, int byteSize) {
-        this.type = type;
+    public Column(JavaType javaType, Object rawData, int byteSize) {
+        this.javaType = javaType;
         this.rawData = rawData;
         this.byteSize = byteSize;
     }
 
-    public Type getType() {
-        return type;
+    public JavaType getType() {
+        return javaType;
     }
 
-    public void setType(Type type) {
-        this.type = type;
+    public void setType(JavaType javaType) {
+        this.javaType = javaType;
     }
 
     public Object getRawData() {

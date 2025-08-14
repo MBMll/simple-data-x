@@ -16,9 +16,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ *
+ */
 public class MysqlWriter implements Writer<Record> {
+    /**
+     *
+     */
     private final Logger log = LoggerFactory.getLogger(MysqlWriter.class);
+    /**
+     *
+     */
     private MysqlWriterConfig config;
+
+    /**
+     * @return
+     */
+    public MysqlWriterConfig getConfig() {
+        return config;
+    }
+
+    /**
+     * @param config
+     */
+    public void setConfig(MysqlWriterConfig config) {
+        this.config = config;
+    }
 
     /**
      * 获取写入模板
@@ -40,12 +63,24 @@ public class MysqlWriter implements Writer<Record> {
         }
     }
 
+    /**
+     * @param preparedStatement
+     * @param record
+     * @param sqlColumns
+     * @param columnIndex
+     *
+     * @throws SQLException
+     * @throws UnsupportedTypeException
+     */
     private void setValue(PreparedStatement preparedStatement, Record record, List<SqlColumn> sqlColumns,
                           int columnIndex) throws SQLException, UnsupportedTypeException {
         java.util.Date utilDate;
-        int columnSqltype = sqlColumns.get(columnIndex).getColumnType();
+        SqlColumn sqlColumn = sqlColumns.get(columnIndex);
+        int columnSqltype = sqlColumn.getColumnType();
         Column column = record.getColumns().get(columnIndex);
         String typeName;
+        Object rawData = column.getRawData();
+        int parameterIndex = columnIndex + 1;
         switch (columnSqltype) {
             case Types.CHAR:
             case Types.NCHAR:
@@ -55,10 +90,8 @@ public class MysqlWriter implements Writer<Record> {
             case Types.LONGVARCHAR:
             case Types.NVARCHAR:
             case Types.LONGNVARCHAR:
-                preparedStatement.setString(columnIndex + 1, (String) column
-                        .getRawData());
+                preparedStatement.setString(parameterIndex, (String) rawData);
                 break;
-
             case Types.SMALLINT:
             case Types.INTEGER:
             case Types.BIGINT:
@@ -67,88 +100,84 @@ public class MysqlWriter implements Writer<Record> {
             case Types.FLOAT:
             case Types.REAL:
             case Types.DOUBLE:
-                String strValue = (String) column.getRawData();
+                String strValue = (String) rawData;
                 if (config.isEmptyAsNull() && "".equals(strValue)) {
-                    preparedStatement.setString(columnIndex + 1, null);
+                    preparedStatement.setString(parameterIndex, null);
                 } else {
-                    preparedStatement.setString(columnIndex + 1, strValue);
+                    preparedStatement.setString(parameterIndex, strValue);
                 }
                 break;
 
             //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
             case Types.TINYINT:
-                Long longValue = (Long) column.getRawData();
+                Long longValue = (Long) rawData;
                 if (null == longValue) {
-                    preparedStatement.setString(columnIndex + 1, null);
+                    preparedStatement.setString(parameterIndex, null);
                 } else {
-                    preparedStatement.setString(columnIndex + 1, longValue.toString());
+                    preparedStatement.setString(parameterIndex, longValue.toString());
                 }
                 break;
 
             // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
             case Types.DATE:
-                typeName = sqlColumns.get(columnIndex).getColumnTypeName();
+                typeName = sqlColumn.getColumnTypeName();
 
                 if (typeName.equalsIgnoreCase("year")) {
-                    if (column.getRawData() == null) {
-                        preparedStatement.setString(columnIndex + 1, null);
+                    if (rawData == null) {
+                        preparedStatement.setString(parameterIndex, null);
                     } else {
-                        preparedStatement.setInt(columnIndex + 1, ((BigInteger) column.getRawData()).intValue());
+                        preparedStatement.setInt(parameterIndex, ((BigInteger) rawData).intValue());
                     }
                 } else {
                     java.sql.Date sqlDate = null;
-                    utilDate = (java.util.Date) column.getRawData();
+                    utilDate = (java.util.Date) rawData;
                     if (null != utilDate) {
                         sqlDate = new java.sql.Date(utilDate.getTime());
                     }
-                    preparedStatement.setDate(columnIndex + 1, sqlDate);
+                    preparedStatement.setDate(parameterIndex, sqlDate);
                 }
                 break;
 
             case Types.TIME:
                 java.sql.Time sqlTime = null;
-                utilDate = (java.util.Date) column.getRawData();
+                utilDate = (java.util.Date) rawData;
                 if (null != utilDate) {
                     sqlTime = new java.sql.Time(utilDate.getTime());
                 }
-                preparedStatement.setTime(columnIndex + 1, sqlTime);
+                preparedStatement.setTime(parameterIndex, sqlTime);
                 break;
-
             case Types.TIMESTAMP:
                 java.sql.Timestamp sqlTimestamp = null;
-                utilDate = (java.util.Date) column.getRawData();
+                utilDate = (java.util.Date) rawData;
 
                 if (null != utilDate) {
                     sqlTimestamp = new java.sql.Timestamp(
                             utilDate.getTime());
                 }
-                preparedStatement.setTimestamp(columnIndex + 1, sqlTimestamp);
+                preparedStatement.setTimestamp(parameterIndex, sqlTimestamp);
                 break;
-
             case Types.BINARY:
             case Types.VARBINARY:
             case Types.BLOB:
             case Types.LONGVARBINARY:
-                preparedStatement.setBytes(columnIndex + 1, (byte[]) column
-                        .getRawData());
+                preparedStatement.setBytes(parameterIndex, (byte[]) rawData);
                 break;
-
             case Types.BOOLEAN:
-                preparedStatement.setBoolean(columnIndex + 1, (Boolean) column.getRawData());
+                preparedStatement.setBoolean(parameterIndex, (Boolean) rawData);
                 break;
-
             // warn: bit(1) -> Types.BIT 可使用setBoolean
             // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
             case Types.BIT:
-                preparedStatement.setBoolean(columnIndex + 1, (Boolean) column.getRawData());
+                preparedStatement.setBoolean(parameterIndex, (Boolean) rawData);
+                break;
             default:
                 throw new UnsupportedTypeException(
                         String.format(
                                 "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], " +
                                         "字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
-                                sqlColumns.get(columnIndex).getColumnName(),
-                                sqlColumns.get(columnIndex).getColumnType(),
-                                sqlColumns.get(columnIndex).getColumnTypeName()));
+                                sqlColumn.getColumnName(),
+                                sqlColumn.getColumnType(),
+                                sqlColumn.getColumnTypeName()));
         }
     }
 
@@ -188,14 +217,13 @@ public class MysqlWriter implements Writer<Record> {
                     records.add(record);
                     bytesRead += records.stream().mapToInt(Record::getByteSize).sum();
                 }
-                if (
-                    // 如果队列为空，并且已经读取了数据，或者达到了批次大小或字节大小限制，则执行写入操作
-                        (record == null && !records.isEmpty()) ||
-                                records.size() >= config.getBatchRowSize() || bytesRead >= config.getBatchByteSize()) {
+                // 如果队列为空，并且已经读取了数据，或者达到了批次大小或字节大小限制，则执行写入操作
+                if ((record == null && !records.isEmpty()) ||
+                        records.size() >= config.getBatchRowSize() || bytesRead >= config.getBatchByteSize()) {
                     try (PreparedStatement preparedStatement = connection.prepareStatement(writeSql)) {
                         for (Record e : records) {
+                            // 设置值
                             for (int i = 0; i < columns.size(); i++) {
-                                // 设置值
                                 setValue(preparedStatement, e, columns, i);
                             }
                             // 添加到批处理
@@ -213,9 +241,6 @@ public class MysqlWriter implements Writer<Record> {
                     bytesRead = 0;
                 }
             } while (record != null);
-            try (PreparedStatement preparedStatement = connection.prepareStatement(writeSql)) {
-
-            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataXException("保存失败", e);
